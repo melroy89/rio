@@ -1078,7 +1078,8 @@ impl<U: EventListener> Crosswords<U> {
 
     #[inline]
     pub fn mark_line_damaged(&mut self, line: Line) {
-        self.damage.damage_line(line.0 as usize, 0, self.columns() - 1);
+        self.damage
+            .damage_line(line.0 as usize, 0, self.columns() - 1);
     }
 
     pub fn selection_to_string(&self) -> Option<String> {

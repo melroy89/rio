@@ -3,7 +3,6 @@ mod compositor;
 mod image_cache;
 pub mod text;
 
-use std::collections::HashSet;
 use crate::components::core::orthographic_projection;
 use crate::components::rich_text::image_cache::{GlyphCache, ImageCache};
 use crate::context::Context;
@@ -12,6 +11,7 @@ use crate::layout::SugarDimensions;
 use crate::sugarloaf::graphics::GraphicRenderRequest;
 use crate::Graphics;
 use compositor::{Compositor, DisplayList, Rect, Vertex};
+use std::collections::HashSet;
 use std::{borrow::Cow, mem};
 use text::{Glyph, TextRunStyle};
 use wgpu::util::DeviceExt;
@@ -471,14 +471,37 @@ fn draw_layout(
                     y,
                 });
             }
+
+            let topline = py - ascent;
+            let mut background_color = run.span.background_color;
+            if let Some(graphic) = run.span.media {
+                if graphics.contains(&graphic.id) {
+                    background_color = None;
+                }
+
+                if !last_rendered_graphic.contains(&graphic.id) {
+                    let offset_x = graphic.offset_x as f32;
+                    let offset_y = graphic.offset_y as f32;
+
+                    graphics.top_layer.push(GraphicRenderRequest {
+                        id: graphic.id,
+                        pos_x: run_x - offset_x,
+                        pos_y: topline - offset_y,
+                        width: None,
+                        height: None,
+                    });
+                    last_rendered_graphic.insert(graphic.id);
+                }
+            }
+
             let style = TextRunStyle {
                 font_coords,
                 font_size: run.size,
                 color: run.span.color,
                 cursor: run.span.cursor,
-                background_color: run.span.background_color,
+                background_color,
                 baseline: py,
-                topline: py - ascent,
+                topline,
                 line_height,
                 advance: px - run_x,
                 decoration: run.span.decoration,
@@ -496,22 +519,6 @@ fn draw_layout(
                     font_coords,
                     style.font_size,
                 );
-            }
-
-            if let Some(graphic) = run.span.media {
-                if !last_rendered_graphic.contains(&graphic.id) {
-                    let offset_x = graphic.offset_x as f32;
-                    let offset_y = graphic.offset_y as f32;
-
-                    graphics.top_layer.push(GraphicRenderRequest {
-                        id: graphic.id,
-                        pos_x: run_x - offset_x,
-                        pos_y: style.topline - offset_y,
-                        width: None,
-                        height: None,
-                    });
-                    last_rendered_graphic.insert(graphic.id);
-                }
             }
 
             comp.draw_run(

@@ -200,19 +200,35 @@ impl ApplicationHandler<EventPayload> for Application<'_> {
             }
             RioEventType::Rio(RioEvent::UpdateGraphicLibrary) => {
                 if let Some(route) = self.router.routes.get_mut(&window_id) {
-                    let mut terminal =
-                        route.window.screen.context_manager.current_mut().terminal.lock();
+                    let mut terminal = route
+                        .window
+                        .screen
+                        .context_manager
+                        .current_mut()
+                        .terminal
+                        .lock();
                     let graphics = terminal.graphics_take_queues();
                     drop(terminal);
                     if let Some(graphic_queues) = graphics {
+                        for graphic_data in graphic_queues.remove_queue {
+                            route.window.screen.sugarloaf.graphics.remove(&graphic_data);
+                        }
+
                         for graphic_data in graphic_queues.pending {
                             route.window.screen.sugarloaf.graphics.insert(graphic_data);
                         }
 
-                        for graphic_data in graphic_queues.remove_queue {
-                            route.window.screen.sugarloaf.graphics.remove(&graphic_data);
+                        for clear_subregions in graphic_queues.clear_subregions {
+                            route
+                                .window
+                                .screen
+                                .sugarloaf
+                                .graphics
+                                .remove(&clear_subregions.id);
                         }
                     }
+
+                    route.window.screen.render();
                 }
             }
             RioEventType::Rio(RioEvent::ReportToAssistant(error)) => {
@@ -380,8 +396,13 @@ impl ApplicationHandler<EventPayload> for Application<'_> {
             }
             RioEventType::Rio(RioEvent::Scroll(scroll)) => {
                 if let Some(route) = self.router.routes.get_mut(&window_id) {
-                    let mut terminal =
-                        route.window.screen.context_manager.current_mut().terminal.lock();
+                    let mut terminal = route
+                        .window
+                        .screen
+                        .context_manager
+                        .current_mut()
+                        .terminal
+                        .lock();
                     terminal.scroll_display(scroll);
                     drop(terminal);
                 }

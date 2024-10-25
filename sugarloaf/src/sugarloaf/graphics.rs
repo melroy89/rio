@@ -56,6 +56,11 @@ impl Graphics {
     }
 
     #[inline]
+    pub fn contains(&self, id: &GraphicId) -> bool {
+        self.inner.contains_key(id)
+    }
+
+    #[inline]
     pub fn insert(&mut self, graphic_data: GraphicData) {
         if self.inner.contains_key(&graphic_data.id) {
             return;

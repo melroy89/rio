@@ -304,12 +304,12 @@ impl Renderer {
                 // });
                 // style.media = Some(graphics);
                 let graphic = &square.graphics().unwrap()[0];
+                // println!("{:?}", graphic.texture.id);
                 style.media = Some(Graphic {
                     id: graphic.texture.id,
                     offset_x: graphic.offset_x,
                     offset_y: graphic.offset_y,
                 });
-                style.background_color = None;
             }
 
             if let Some((font_id, width)) =
